@@ -15,8 +15,12 @@ timeid <- function(x){
   return(ttx)
 }
 
+cpname <- function(x){ 
+  (unlist(strsplit(unlist(strsplit(x,">"))[2],"<"))[1])
+}
+
 # read data in as a single column of character strings
-lss <- read.csv("Tom 4B.lss")
+lss <- read.csv("meta any.lss")
 lss[,1] <- as.character(lss[,1])
 
 # extract data
@@ -24,8 +28,12 @@ segtime <- rep(NA,nrow(lss))
 segcpnum <- rep(0,nrow(lss))
 segdata <- rep("",nrow(lss))
 cpnum <- 0
+cpnames <- NULL
 for(i in 1:length(segtime)){
-  if(length(grep("<Name>",lss[i,]))>0) cpnum <- cpnum+1
+  if(length(grep("<Name>",lss[i,]))>0){ 
+    cpnum <- cpnum+1
+    cpnames <- c(cpnames,cpname(lss[i,]))
+  }
   segcpnum[i] <- cpnum
   if(length(grep("GameTime",lss[i,]))>0){ 
     segtime[i] <- gametime(lss[i,])
@@ -59,7 +67,7 @@ ttgolds<-apply(ilruns,2,min,na.rm=T)
 # manual tuning begins here:
 # YOU have to pick the column to define ilruns2, the colors, the main title, etc.
 ilruns2 <- subset(ilruns,!is.na(ilruns[,2]))
-#ilruns2 <- subset(ilruns2,ilruns2[,1]<120)
+#ilruns2 <- subset(ilruns2,rowSums(ilruns2[,2:21],na.rm=T)<120)
 #ilruns2 <- ilruns2[-(1:169),]
 dim(ilruns2)
 #ilruns2[,1] <- rowSums(ilruns2[,2:4])
@@ -68,13 +76,12 @@ colSums(is.na(ilruns2))
 #cpcols <- c("gray",rep("blue",3),rep("magenta",3),rep("red",4),rep("violet",4),rep("darkorange",6),rep("forestgreen",7),rep("tan",9))
 #cpcols <- rep("cornflowerblue",4)
 #cpcols <- hsv(runif(50,min=0,max=8/9),runif(50,min=0.6,max=1),1)
-cpcols1 <- hsv(seq(0.02,0.48,length.out=10),0.8,1)
-cpcols2 <- hsv(seq(0.5,0.98,length.out=10),0.8,1)
-cpcols <- rep(0,20)
-cpcols[2*(1:10) - 1] <- cpcols1
-cpcols[2*(1:10)] <- cpcols2
+cpcols1 <- hsv(seq(0.02,0.98,length.out=ncol(ilruns)+1),0.8,1)
+cpcols <- cpcols1[order(c(1:ceiling(length(cpcols1)/2),0.5 + 1:floor(length(cpcols1)/2)))]
+
+png(filename="meta any.png",height=500,width=600+2.5*nrow(ilruns2),pointsize=16)
 par(mar=c(5.1,4.1,2.1,2.1))
-plot(0,0,type="n",xlab="Attempt (out of first screen)",ylab="Time (seconds)",xlim=c(1,nrow(ilruns2)),ylim=c(0,max(ilruns2[,1],na.rm=T)),main="Tom 4B")
+plot(0,0,type="n",xlab="Attempt (out of prologue)",ylab="Time (seconds)",xlim=c(1,nrow(ilruns2)),ylim=c(0,max(ilruns2[,1],na.rm=T)),main="Metagloria any%")
 abline(h=seq(60,6000,60),col="gray",lty=2)
 for(i in 1:nrow(ilruns2)){
   rect(i-0.45,0,i+0.45,ilruns2[i,2],density=-1,col=cpcols[1],border=1)
@@ -87,6 +94,7 @@ for(i in 1:nrow(ilruns2)){
   }
   if(!is.na(ilruns2[i,1])) if(ilruns2[i,1]==ttgolds[1]) rect(i-0.45,0,i+0.45,ilruns2[i,1],density=0,border="gold",lwd=2)
 }
+dev.off()
 
 
 # spaghetti plot
