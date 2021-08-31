@@ -11,11 +11,12 @@ attemptid <- function(x){
 timeid <- function(x){        
   ttx<-as.numeric(unlist(strsplit(unlist(strsplit(x,"="))[2],">"))[1])
   if(is.na(ttx)) ttx <- -9
+  if(ttx<0) ttx <- ttx+9999
   return(ttx)
 }
 
 # read data in as a single column of character strings
-lss <- read.csv("crab glyph.lss")
+lss <- read.csv("Tom 4B.lss")
 lss[,1] <- as.character(lss[,1])
 
 # extract data
@@ -50,6 +51,7 @@ for(i in 1:length(segdata)){
     ilruns[index,segcpnum[i]+1] <- segtime[i]
   }
 }
+ilruns <- ilruns[-which(rowSums(ilruns,na.rm=T)==0),]
 
 ttgolds<-apply(ilruns,2,min,na.rm=T)
 
@@ -57,14 +59,22 @@ ttgolds<-apply(ilruns,2,min,na.rm=T)
 # manual tuning begins here:
 # YOU have to pick the column to define ilruns2, the colors, the main title, etc.
 ilruns2 <- subset(ilruns,!is.na(ilruns[,2]))
+#ilruns2 <- subset(ilruns2,ilruns2[,1]<120)
+#ilruns2 <- ilruns2[-(1:169),]
 dim(ilruns2)
-ilruns2[,1] <- rowSums(ilruns2[,2:7])
+#ilruns2[,1] <- rowSums(ilruns2[,2:4])
+#ilruns2 <- subset(ilruns2,ilruns2[,2]<30)
 colSums(is.na(ilruns2))
 #cpcols <- c("gray",rep("blue",3),rep("magenta",3),rep("red",4),rep("violet",4),rep("darkorange",6),rep("forestgreen",7),rep("tan",9))
-#cpcols <- rep("tomato",4)
-cpcols <- hsv(runif(50,min=0,max=8/9),runif(50,min=0.6,max=1),1)
+#cpcols <- rep("cornflowerblue",4)
+#cpcols <- hsv(runif(50,min=0,max=8/9),runif(50,min=0.6,max=1),1)
+cpcols1 <- hsv(seq(0.02,0.48,length.out=10),0.8,1)
+cpcols2 <- hsv(seq(0.5,0.98,length.out=10),0.8,1)
+cpcols <- rep(0,20)
+cpcols[2*(1:10) - 1] <- cpcols1
+cpcols[2*(1:10)] <- cpcols2
 par(mar=c(5.1,4.1,2.1,2.1))
-plot(0,0,type="n",xlab="Attempt (that got past first checkpoint)",ylab="Time (seconds)",xlim=c(1,nrow(ilruns2)),ylim=c(0,max(ilruns2[,1],na.rm=T)),main="crab glyph")
+plot(0,0,type="n",xlab="Attempt (out of first screen)",ylab="Time (seconds)",xlim=c(1,nrow(ilruns2)),ylim=c(0,max(ilruns2[,1],na.rm=T)),main="Tom 4B")
 abline(h=seq(60,6000,60),col="gray",lty=2)
 for(i in 1:nrow(ilruns2)){
   rect(i-0.45,0,i+0.45,ilruns2[i,2],density=-1,col=cpcols[1],border=1)
@@ -76,4 +86,14 @@ for(i in 1:nrow(ilruns2)){
     }
   }
   if(!is.na(ilruns2[i,1])) if(ilruns2[i,1]==ttgolds[1]) rect(i-0.45,0,i+0.45,ilruns2[i,1],density=0,border="gold",lwd=2)
+}
+
+
+# spaghetti plot
+ttavg <- colMeans(ilruns2,na.rm=T)
+paceavg <- cumsum(ttavg[2:length(ttavg)])
+plot(0,0,type="n",xlab="Attempt (completed)",ylab="Seconds above average",xlim=c(1,ncol(ilruns2)),ylim=c(-25,30),main="Tom 4B")
+for(i in 1:nrow(ilruns2)){
+  ttrun <- cumsum(ilruns2[i,2:ncol(ilruns2)])-paceavg
+  lines(1:length(ttrun),ttrun,col=hsv((i-1)/nrow(ilruns2),0.8,1))
 }
